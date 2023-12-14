@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UIManager : MonoBehaviour
 {
@@ -18,18 +19,26 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject controllerObj;
     private IIAPManager iAPManager;
 
+    [SerializeField] private GameObject popupPurchase;
+    [SerializeField] private Button acceptPurchaseBtn, cancelPurchaseBtn;
+    [SerializeField] private TextMeshProUGUI notificationPurchaseTxt;
+
     private Dictionary<string, UIIAPElement> currentUIIAPElements = new Dictionary<string, UIIAPElement>();
     private List<Product> currentProduct = new List<Product>();
 
-    //[Obsolete]
     void Awake()
     {
-        iAPManager = controllerObj.GetComponent<IIAPManager>();
+        //=/Debug/============================
         GameEvent.ClearEvent();
         GameEvent.OnLog += ShowLog;
         GameEvent.OnLogError += ShowLogError;
-        GameEvent.OnAddNewIAP += AddNewIAPs;
-        GameEvent.OnUpdateIAPById += UpdateUIForIAPById;
+        //====================================
+
+        iAPManager = controllerObj.GetComponent<IIAPManager>();
+        iAPManager.OnUpdateIAPProductsDone += RefrestIAPProductUIs;
+        iAPManager.OnUpdateIAPProductByIdDone += UpdateUIForIAPById;
+        cancelPurchaseBtn.onClick?.RemoveAllListeners();
+        cancelPurchaseBtn.onClick?.AddListener(() => SetActivePopupPurchase(false));
     }
 
     //=/Debug/================================================================================================
@@ -50,8 +59,7 @@ public class UIManager : MonoBehaviour
 
     //====================================================================================================
 
-    //[Obsolete]
-    private void AddNewIAPs()
+    private void RefrestIAPProductUIs()
     {
         if (iAPManager.TryGetIAPProducts(currentProduct))
         {
@@ -68,7 +76,7 @@ public class UIManager : MonoBehaviour
                 if (!product.IsPurchase)
                 {
                     newIAPButtonUI.priceTxt.text = $"{data.ProductPrice}";
-                    newIAPButtonUI.buttonIAP.onClick.AddListener(() => iAPManager.PurchaseProduct(product.ProductID));
+                    newIAPButtonUI.buttonIAP.onClick?.AddListener(() => SetupNotificationPurchase(data));
                 }
                 else
                 {
@@ -90,6 +98,26 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    private void SetActivePopupPurchase(bool isActive)
+    {
+        if (popupPurchase.activeSelf != isActive)
+        {
+            popupPurchase.SetActive(isActive);
+        }
+    }
+
+    private void SetupNotificationPurchase(IAPElement iAP)
+    {
+        notificationPurchaseTxt.text = $"Confirming the purchase of item [{iAP.ProductTitle}].";
+        acceptPurchaseBtn.onClick?.RemoveAllListeners();
+        acceptPurchaseBtn.onClick?.AddListener(() =>
+        {
+            iAPManager.PurchaseProduct(iAP.ProductID);
+            SetActivePopupPurchase(false);
+        });
+        SetActivePopupPurchase(true);
+    }
+
     private void OnDestroy()
     {
         GameEvent.ClearEvent();
@@ -100,8 +128,6 @@ public class GameEvent
 {
     public static System.Action<string> OnLogError;
     public static System.Action<string> OnLog;
-    public static System.Action OnAddNewIAP;
-    public static System.Action<string> OnUpdateIAPById;
 
     public static void ShowLog(string log)
     {
@@ -113,21 +139,9 @@ public class GameEvent
         OnLogError?.Invoke($"[{DateTime.Now}]: {log}");
     }
 
-    public static void AddIAPs()
-    {
-        OnAddNewIAP?.Invoke();
-    }
-
-    public static void UpdateIAPByID(string IAPid)
-    {
-        OnUpdateIAPById?.Invoke(IAPid);
-    }
-
     public static void ClearEvent()
     {
         OnLogError = null;
         OnLog = null;
-        OnUpdateIAPById = null;
-        OnAddNewIAP = null;
     }
 }

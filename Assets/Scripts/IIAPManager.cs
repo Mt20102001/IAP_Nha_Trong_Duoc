@@ -6,6 +6,9 @@ namespace IAP
 {
     public interface IIAPManager
     {
+        public event Action OnUpdateIAPProductsDone;
+        public event Action<string> OnUpdateIAPProductByIdDone;
+
         public bool IsIAPSupported();
         public void SetupIAPProducts(IAPElement[] products);
         public bool TryGetIAPProducts(List<Product> products);

@@ -1,4 +1,5 @@
 ﻿using IAP;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -7,6 +8,9 @@ public class IAPManager : MonoBehaviour, IIAPManager
 {
     [SerializeField] private IAPLibrary iapLibrary;
     private Dictionary<string, Product> products = new Dictionary<string, Product>();
+
+    public event Action OnUpdateIAPProductsDone;
+    public event Action<string> OnUpdateIAPProductByIdDone;
 
     private void Start()
     {
@@ -19,10 +23,7 @@ public class IAPManager : MonoBehaviour, IIAPManager
         {
             if (iapLibrary != null && iapLibrary.iAPElements.Length > 0)
             {
-                if (!Load())
-                {
-                    SetupIAPProducts(iapLibrary.iAPElements);
-                }
+                SetupIAPProducts(iapLibrary.iAPElements);
             }
             else
             {
@@ -99,10 +100,11 @@ public class IAPManager : MonoBehaviour, IIAPManager
             {
                 if (product != null && !product.IsPurchase)
                 {
+                    
+
                     product.IsPurchase = true;
+                    OnUpdateIAPProductByIdDone?.Invoke(productID);
                     GameEvent.ShowLog($"Purchase product {product.ProductID} completed.");
-                    GameEvent.UpdateIAPByID(productID);
-                    Save();
                 }
                 else
                 {
@@ -156,8 +158,8 @@ public class IAPManager : MonoBehaviour, IIAPManager
                 });
             }
         }
+        OnUpdateIAPProductsDone?.Invoke();
         GameEvent.ShowLog("Setup IAP Products completed.");
-        GameEvent.AddIAPs();
     }
 
     //public void OnInitializeFailed(InitializationFailureReason error)
@@ -179,41 +181,4 @@ public class IAPManager : MonoBehaviour, IIAPManager
     //    Debug.LogError("Purchase failed. Reason: " + failureReason);
     //    GameEvent.ShowLogError("Purchase failed. Reason: " + failureReason);
     //}
-
-    private string Encode(Dictionary<string, Product> products)
-    {
-        string data = string.Empty;
-        //foreach (var product in products)
-        //{
-
-        //}
-
-        return string.Empty;
-    }
-
-    private Dictionary<string, Product> Decode(string dataString)
-    {
-        Dictionary<string, Product> datasLoaded = new Dictionary<string, Product>();
-
-        return datasLoaded;
-    }
-
-    private const string key = "keyLoadDataIAPProducts";
-    private void Save()
-    {
-        PlayerPrefs.SetString(key, Encode(this.products));
-    }
-
-    private bool Load()
-    {
-        string dataString = PlayerPrefs.GetString(key);
-        if (!string.IsNullOrEmpty(dataString))
-        {
-            var dataLoaded = Decode(dataString);
-            products = dataLoaded;
-            return true;
-        }
-
-        return false;
-    }
 }
