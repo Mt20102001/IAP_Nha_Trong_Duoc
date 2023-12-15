@@ -1,5 +1,6 @@
 using IAP;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -26,7 +27,7 @@ public class UIManager : MonoBehaviour
     private Dictionary<string, UIIAPElement> currentUIIAPElements = new Dictionary<string, UIIAPElement>();
     private List<Product> currentProduct = new List<Product>();
 
-    void Awake()
+    IEnumerator Start()
     {
         //=/Debug/============================
         GameEvent.ClearEvent();
@@ -35,11 +36,14 @@ public class UIManager : MonoBehaviour
         //====================================
 
         iAPManager = controllerObj.GetComponent<IIAPManager>();
-        iAPManager.OnUpdateIAPProductsDone += RefrestIAPProductUIs;
-        iAPManager.OnUpdateIAPProductByIdDone += UpdateUIForIAPById;
         cancelPurchaseBtn.onClick?.RemoveAllListeners();
         cancelPurchaseBtn.onClick?.AddListener(() => SetActivePopupPurchase(false));
+
+        yield return new WaitUntil(() => iAPManager.IsSetupDone == true);
+        RefrestIAPProductUIs();
     }
+
+    
 
     //=/Debug/================================================================================================
 
@@ -93,8 +97,20 @@ public class UIManager : MonoBehaviour
     {
         if (currentUIIAPElements.TryGetValue(productID, out var uIOfIAP))
         {
-            uIOfIAP.priceTxt.text = "Saled";
-            uIOfIAP.buttonIAP.enabled = false;
+            if (iAPManager.TryGetIAPProductByID(productID, out var product))
+            {
+                if (product.IsPurchase)
+                {
+                    uIOfIAP.priceTxt.text = "Saled";
+                    uIOfIAP.buttonIAP.enabled = false;
+                }
+                else
+                {
+                    var infor = iAPManager.GetIAPInformationByID(productID);
+                    uIOfIAP.priceTxt.text = $"{infor.ProductPrice}";
+                    uIOfIAP.buttonIAP.enabled = true;
+                }
+            }
         }
     }
 
@@ -112,11 +128,23 @@ public class UIManager : MonoBehaviour
         acceptPurchaseBtn.onClick?.RemoveAllListeners();
         acceptPurchaseBtn.onClick?.AddListener(() =>
         {
-            iAPManager.PurchaseProduct(iAP.ProductID);
-            SetActivePopupPurchase(false);
+            iAPManager.PurchaseProduct(iAP.ProductID, (success) =>
+            {
+                if (success)
+                {
+                    SetActivePopupPurchase(false);
+                    UpdateUIForIAPById(iAP.ProductID);
+                }
+                else
+                {
+                    // notice
+                }
+            });
         });
         SetActivePopupPurchase(true);
     }
+
+
 
     private void OnDestroy()
     {

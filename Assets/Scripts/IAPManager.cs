@@ -4,13 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+
 public class IAPManager : MonoBehaviour, IIAPManager
 {
     [SerializeField] private IAPLibrary iapLibrary;
     private Dictionary<string, Product> products = new Dictionary<string, Product>();
 
-    public event Action OnUpdateIAPProductsDone;
-    public event Action<string> OnUpdateIAPProductByIdDone;
+    public bool IsSetupDone { get; private set; }
 
     private void Start()
     {
@@ -19,6 +19,9 @@ public class IAPManager : MonoBehaviour, IIAPManager
 
     private void InitializePurchasing()
     {
+        if (IsSetupDone)
+            return;
+
         if (IsIAPSupported())
         {
             if (iapLibrary != null && iapLibrary.iAPElements.Length > 0)
@@ -92,7 +95,7 @@ public class IAPManager : MonoBehaviour, IIAPManager
         return true;
     }
 
-    public void PurchaseProduct(string productID)
+    public void PurchaseProduct(string productID, Action<bool> PurchaseCallback)
     {
         if (this.products != null)
         {
@@ -100,52 +103,57 @@ public class IAPManager : MonoBehaviour, IIAPManager
             {
                 if (product != null && !product.IsPurchase)
                 {
-                    
-
                     product.IsPurchase = true;
-                    OnUpdateIAPProductByIdDone?.Invoke(productID);
-                    GameEvent.ShowLog($"Purchase product {product.ProductID} completed.");
+                    PurchaseCallback?.Invoke(true);
+                    OnPurchaseSuccessful(productID);
                 }
                 else
                 {
-                    GameEvent.ShowLogError("Product not found or not available for purchase.");
+                    PurchaseCallback?.Invoke(false);
+                    OnPurchaseFailed(productID);
                 }
             }
         }
         else
         {
+            PurchaseCallback?.Invoke(false);
             GameEvent.ShowLogError("Store controller is not initialized.");
         }
     }
 
-    public void RestorePurchases()
+    public void RestorePurchases(Action<bool> PurchaseCallback)
     {
-        //if (extensionProvider != null)
+        //bool flag = false;
+        //if (this.products != null)
         //{
-        //    extensionProvider.GetExtension<IAppleExtensions>().RestoreTransactions(result => {
-        //        // Xử lý kết quả phục hồi giao dịch
-        //        if (result)
-        //        {
-        //            Debug.LogError("Restore failed.");
-        //            GameEvent.ShowLogError("Restore failed.");
-        //        }
-        //        else
-        //        {
-        //            Debug.Log("Restore completed.");
-        //            GameEvent.ShowLog("Restore completed.");
-        //        }
-        //    });
+        //    foreach (var product in products.Values)
+        //    {
+        //       if (product != null)
+        //       {
+        //            if (product.IsPurchase)
+        //            {
+        //                product.IsPurchase = false;
+        //                flag =
+        //            }    
+        //       }
+        //       else
+        //       {
+        //            PurchaseCallback?.Invoke(false);
+        //            break;
+        //       }
+        //    }
+        //    PurchaseCallback?.Invoke(true);
         //}
         //else
         //{
-        //    Debug.LogError("Extension provider is not initialized.");
-        //    GameEvent.ShowLogError("Extension provider is not initialized.");
+        //    PurchaseCallback?.Invoke(false);
+        //    GameEvent.ShowLogError("Store controller is not initialized.");
         //}
     }
 
     public void SetupIAPProducts(IAPElement[] products)
     {
-
+        IsSetupDone = false;
         for (int i = 0; i < products.Length; i++)
         {
             var product = products[i];
@@ -158,27 +166,27 @@ public class IAPManager : MonoBehaviour, IIAPManager
                 });
             }
         }
-        OnUpdateIAPProductsDone?.Invoke();
+        IsSetupDone = true;
         GameEvent.ShowLog("Setup IAP Products completed.");
     }
 
-    //public void OnInitializeFailed(InitializationFailureReason error)
-    //{
-    //    Debug.LogError("Initialization failed: " + error);
-    //    GameEvent.ShowLogError("Initialization failed: " + error);
-    //}
+    public void OnPurchaseFailed(string productID)
+    {
+        GameEvent.ShowLogError($"Purchase failed product [{productID}]");
+    }
 
-    //public PurchaseProcessingResult ProcessPurchase(PurchaseEventArgs purchaseEvent)
-    //{
-    //    Debug.Log("Shopping was successful.");
-    //    GameEvent.ShowLog("Shopping was successful.");
+    public void OnPurchaseSuccessful(string productID)
+    {
+        GameEvent.ShowLog($"Purchase successful [{productID}]");
+    }
 
-    //    return PurchaseProcessingResult.Complete;
-    //}
+    public void OnRestorePurchasesSuccessful(string productID)
+    {
+        GameEvent.ShowLog($"Restore purchase successful [{productID}]");
+    }
 
-    //public void OnPurchaseFailed(Product product, PurchaseFailureReason failureReason)
-    //{
-    //    Debug.LogError("Purchase failed. Reason: " + failureReason);
-    //    GameEvent.ShowLogError("Purchase failed. Reason: " + failureReason);
-    //}
+    public void OnRestorePurchasesFailed(string productID)
+    {
+        GameEvent.ShowLogError($"Restore purchase failed product [{productID}]");
+    }
 }
