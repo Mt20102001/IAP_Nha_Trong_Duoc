@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
+using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,9 +21,9 @@ public class UIManager : MonoBehaviour
     [SerializeField] private GameObject controllerObj;
     private IIAPManager iAPManager;
 
-    [SerializeField] private GameObject popupPurchase;
-    [SerializeField] private Button acceptPurchaseBtn, cancelPurchaseBtn;
-    [SerializeField] private TextMeshProUGUI notificationPurchaseTxt;
+    [SerializeField] private GameObject popupPurchase, popupRestorePuchare;
+    [SerializeField] private Button acceptPurchaseBtn, cancelPurchaseBtn, restorePuchaseBtn, closeRestorePopupBtn;
+    [SerializeField] private TextMeshProUGUI notificationPurchaseTxt, notificationRestorePurchaseTxt;
 
     private Dictionary<string, UIIAPElement> currentUIIAPElements = new Dictionary<string, UIIAPElement>();
     private List<Product> currentProduct = new List<Product>();
@@ -35,15 +36,35 @@ public class UIManager : MonoBehaviour
         GameEvent.OnLogError += ShowLogError;
         //====================================
 
+        popupRestorePuchare.SetActive(false);
         iAPManager = controllerObj.GetComponent<IIAPManager>();
         cancelPurchaseBtn.onClick?.RemoveAllListeners();
         cancelPurchaseBtn.onClick?.AddListener(() => SetActivePopupPurchase(false));
 
-        yield return new WaitUntil(() => iAPManager.IsSetupDone == true);
-        RefrestIAPProductUIs();
-    }
+        closeRestorePopupBtn.onClick?.AddListener(() => popupRestorePuchare.SetActive(false));
 
-    
+        restorePuchaseBtn.onClick?.RemoveAllListeners();
+        restorePuchaseBtn.onClick?.AddListener(() =>
+        {
+            iAPManager.RestorePurchases((success) =>
+            {
+                if (success)
+                {
+                    popupRestorePuchare.SetActive(true);
+                    notificationRestorePurchaseTxt.text = "Restore Successful";
+                    RefrestUIs();
+                }
+                else
+                {
+                    popupRestorePuchare.SetActive(true);
+                    notificationRestorePurchaseTxt.text = "Restore Failed";
+                }
+            });
+        });
+
+        yield return new WaitUntil(() => iAPManager.IsSetupDone == true);
+        CreateIAPProductUIs();
+    }
 
     //=/Debug/================================================================================================
 
@@ -63,7 +84,7 @@ public class UIManager : MonoBehaviour
 
     //====================================================================================================
 
-    private void RefrestIAPProductUIs()
+    private void CreateIAPProductUIs()
     {
         if (iAPManager.TryGetIAPProducts(currentProduct))
         {
@@ -89,6 +110,18 @@ public class UIManager : MonoBehaviour
                 }
 
                 currentUIIAPElements.TryAdd(product.ProductID, newIAPButtonUI);
+            }
+        }
+    }
+
+    private void RefrestUIs()
+    {
+        if (iAPManager.TryGetIAPProducts(currentProduct))
+        {
+            for (int i = 0; i < currentProduct.Count; i++)
+            {
+                var product = currentProduct[i];
+                UpdateUIForIAPById(product.ProductID);
             }
         }
     }

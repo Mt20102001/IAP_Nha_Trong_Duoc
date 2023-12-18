@@ -123,32 +123,17 @@ public class IAPManager : MonoBehaviour, IIAPManager
 
     public void RestorePurchases(Action<bool> PurchaseCallback)
     {
-        //bool flag = false;
-        //if (this.products != null)
-        //{
-        //    foreach (var product in products.Values)
-        //    {
-        //       if (product != null)
-        //       {
-        //            if (product.IsPurchase)
-        //            {
-        //                product.IsPurchase = false;
-        //                flag =
-        //            }    
-        //       }
-        //       else
-        //       {
-        //            PurchaseCallback?.Invoke(false);
-        //            break;
-        //       }
-        //    }
-        //    PurchaseCallback?.Invoke(true);
-        //}
-        //else
-        //{
-        //    PurchaseCallback?.Invoke(false);
-        //    GameEvent.ShowLogError("Store controller is not initialized.");
-        //}
+        try
+        {
+            PurchaseCallback?.Invoke(true);
+            OnRestorePurchasesSuccessful();
+        }
+        catch (Exception ex)
+        {
+            PurchaseCallback?.Invoke(false);
+            OnRestorePurchasesFailed();
+            GameEvent.ShowLogError($"{ex}");
+        }
     }
 
     public void SetupIAPProducts(IAPElement[] products)
@@ -180,13 +165,13 @@ public class IAPManager : MonoBehaviour, IIAPManager
         GameEvent.ShowLog($"Purchase successful [{productID}]");
     }
 
-    public void OnRestorePurchasesSuccessful(string productID)
+    public void OnRestorePurchasesSuccessful()
     {
-        GameEvent.ShowLog($"Restore purchase successful [{productID}]");
+        GameEvent.ShowLog($"Restore purchase successful");
     }
 
-    public void OnRestorePurchasesFailed(string productID)
+    public void OnRestorePurchasesFailed()
     {
-        GameEvent.ShowLogError($"Restore purchase failed product [{productID}]");
+        GameEvent.ShowLogError($"Restore purchase failed");
     }
 }
