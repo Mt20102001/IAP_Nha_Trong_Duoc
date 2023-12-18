@@ -3,7 +3,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -86,13 +85,14 @@ public class UIManager : MonoBehaviour
 
     private void CreateIAPProductUIs()
     {
-        if (iAPManager.TryGetIAPProducts(currentProduct))
+        int numberProductAvaliable = iAPManager.GetIAPProducts(currentProduct);
+        if (numberProductAvaliable > 0)
         {
-            for (int i = 0; i < currentProduct.Count; i++)
+            for (int i = 0; i < numberProductAvaliable; i++)
             {
                 var product = currentProduct[i];
                 var newIAPButtonUI = GameObject.Instantiate(uiIAPElementPrefab, uiIAPButtonsTransform);
-                var data = iAPManager.GetIAPInformationByID(product.ProductID);
+                var data = product.IAPElement;
                
                 newIAPButtonUI.titleTxt.text = data.ProductTitle;
                 newIAPButtonUI.descriptionTxt.text = data.ProductDescription;
@@ -116,9 +116,10 @@ public class UIManager : MonoBehaviour
 
     private void RefrestUIs()
     {
-        if (iAPManager.TryGetIAPProducts(currentProduct))
+        var numberProductAvaliable = iAPManager.GetIAPProducts(currentProduct);
+        if (numberProductAvaliable > 0)
         {
-            for (int i = 0; i < currentProduct.Count; i++)
+            for (int i = 0; i < numberProductAvaliable; i++)
             {
                 var product = currentProduct[i];
                 UpdateUIForIAPById(product.ProductID);

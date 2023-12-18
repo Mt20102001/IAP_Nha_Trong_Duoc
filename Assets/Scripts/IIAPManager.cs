@@ -1,39 +1,33 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace IAP
 {
     public interface IIAPManager
     {
-        //public event Action OnUpdateIAPProductsDone;
-        //public event Action<string> OnUpdateIAPProductByIdDone;
         public bool IsSetupDone { get; }
         public bool IsIAPSupported();
         public void SetupIAPProducts(IAPElement[] products);
-        public bool TryGetIAPProducts(List<Product> products);
+        public int GetIAPProducts(List<Product> products);
         public bool TryGetIAPProductByID(string productID, out Product currentProduct);
         public IAPElement GetIAPInformationByID(string productID);
-        public bool TryGetPurchasedProducts(List<Product> purchasedProducts);
+        public int GetPurchasedProducts(List<Product> purchasedProducts);
         public void PurchaseProduct(string productID, Action<bool> PurchaseCallback);
         public void RestorePurchases(Action<bool> RestorePurchaseCallback);
     }
 
-    [Serializable]
-    public class IAPElement
+    public interface IAPElement
     {
-        [field:SerializeField] public string ProductID { get; private set; }
-        [field:SerializeField] public long ProductPrice { get; set; }
-        [field:SerializeField] public string ProductTitle { get; set; }
-        [field:SerializeField] public string ProductDescription { get; set; }
-        //[field:SerializeField] public string AppleAppStoreID { get; set; }
-        //[field:SerializeField] public string GooglePlayID { get; set; }
-        //[field:SerializeField] public string AppleSKU { get; set; }
+        public string ProductID { get; }
+        public long ProductPrice { get; }
+        public string ProductTitle { get; }
+        public string ProductDescription { get; }
     }
 
     public class Product
     {
         public string ProductID { get; set; }
         public bool IsPurchase { get; set; }
+        public IAPElement IAPElement { get; set; }
     }
 }

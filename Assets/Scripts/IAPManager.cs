@@ -39,16 +39,16 @@ public class IAPManager : MonoBehaviour, IIAPManager
         }
     }
 
-    public bool TryGetIAPProducts(List<Product> products)
+    public int GetIAPProducts(List<Product> products)
     {
         if (this.products != null)
         {
             products.Clear();
             products.AddRange(this.products.Values);
-            return true;
+            return products.Count;
         }
 
-        return false;
+        return 0;
     }
 
     public bool TryGetIAPProductByID(string productID, out Product currentProduct)
@@ -66,27 +66,27 @@ public class IAPManager : MonoBehaviour, IIAPManager
 
     public IAPElement GetIAPInformationByID(string productID)
     {
-        foreach (var iAPElement in iapLibrary.iAPElements)
+        foreach (var product in products.Values)
         {
-            if (iAPElement != null && iAPElement.ProductID.Equals(productID))
+            if (product != null && product.ProductID.Equals(productID))
             {
-                return iAPElement;
+                return product.IAPElement;
             }
         }
 
         return null;
     }
 
-    public bool TryGetPurchasedProducts(List<Product> products)
+    public int GetPurchasedProducts(List<Product> products)
     {
         if (this.products != null)
         {
             products.Clear();
             products.AddRange(this.products.Values.Where(p => p.IsPurchase == true));
-            return true;
+            return products.Count;
         }
 
-        return false;
+        return 0;
     }
 
     public bool IsIAPSupported()
@@ -147,6 +147,7 @@ public class IAPManager : MonoBehaviour, IIAPManager
                 this.products.Add(product.ProductID, new Product
                 {
                     ProductID = product.ProductID,
+                    IAPElement = product,
                     IsPurchase = false,
                 });
             }
@@ -174,4 +175,16 @@ public class IAPManager : MonoBehaviour, IIAPManager
     {
         GameEvent.ShowLogError($"Restore purchase failed");
     }
+}
+
+[Serializable]
+public class IAPElementData : IAPElement
+{
+    [field : SerializeField] public string ProductID { get; set; }
+
+    [field: SerializeField] public long ProductPrice { get; set; }
+
+    [field: SerializeField] public string ProductTitle { get; set; }
+
+    [field: SerializeField] public string ProductDescription { get; set; }
 }

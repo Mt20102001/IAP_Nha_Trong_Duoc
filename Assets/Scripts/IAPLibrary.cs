@@ -4,5 +4,5 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "IAPLibrary", menuName = "IAP/IAPs Library")]
 public class IAPLibrary : ScriptableObject
 {
-    [field: SerializeField] public IAPElement[] iAPElements;
+    [field: SerializeField] public IAPElementData[] iAPElements;
 }
